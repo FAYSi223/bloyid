@@ -1,99 +1,70 @@
 <?php
-session_start();
+require_once 'db.php';
+
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Not authenticated']);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'Method not allowed']);
+    exit;
+}
+
+$server_id = $_POST['server_id'] ?? null;
+if (!$server_id) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Server ID is required']);
     exit;
 }
 
 try {
-    require_once 'db_connect.php';
-    
-    if (!isset($_POST['server_id']) || !isset($_POST['server_name'])) {
-        throw new Exception('Missing required fields');
-    }
-    
-    $server_id = filter_var($_POST['server_id'], FILTER_SANITIZE_NUMBER_INT);
-    $server_name = htmlspecialchars($_POST['server_name'], ENT_QUOTES, 'UTF-8');
-    $description = isset($_POST['description']) ? 
-        htmlspecialchars($_POST['description'], ENT_QUOTES, 'UTF-8') : '';
+    $pdo->beginTransaction();
     
     $stmt = $pdo->prepare("
-        SELECT role 
-        FROM server_members 
-        WHERE server_id = ? AND user_id = ? AND role = 'admin'
+        UPDATE servers 
+        SET name = ?, description = ?
+        WHERE id = ?
     ");
-    $stmt->execute([$server_id, $_SESSION['user_id']]);
-    
-    if (!$stmt->fetch()) {
-        throw new Exception('You do not have permission to update this server');
-    }
-    
-    $icon_url = null;
-    $banner_url = null;
-    
-    if (isset($_FILES['icon']) && $_FILES['icon']['error'] === UPLOAD_ERR_OK) {
-        $icon_url = handleFileUpload($_FILES['icon'], 'server_icons');
-    }
-    
-    if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
-        $banner_url = handleFileUpload($_FILES['banner'], 'server_banners');
-    }
-    
-    $sql = "UPDATE servers SET name = ?, description = ?";
-    $params = [$server_name, $description];
-    
-    if ($icon_url) {
-        $sql .= ", icon_url = ?";
-        $params[] = $icon_url;
-    }
-    
-    if ($banner_url) {
-        $sql .= ", banner_url = ?";
-        $params[] = $banner_url;
-    }
-    
-    $sql .= " WHERE id = ?";
-    $params[] = $server_id;
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Server updated successfully'
+    $stmt->execute([
+        $_POST['server_name'],
+        $_POST['description'],
+        $server_id
     ]);
-
+    
+    if (isset($_FILES['icon_upload']) && $_FILES['icon_upload']['error'] === UPLOAD_ERR_OK) {
+        $icon_url = handleFileUpload($_FILES['icon_upload'], 'icons');
+        $stmt = $pdo->prepare("UPDATE servers SET icon_url = ? WHERE id = ?");
+        $stmt->execute([$icon_url, $server_id]);
+    }
+    
+    if (isset($_FILES['banner_upload']) && $_FILES['banner_upload']['error'] === UPLOAD_ERR_OK) {
+        $banner_url = handleFileUpload($_FILES['banner_upload'], 'banners');
+        $stmt = $pdo->prepare("UPDATE servers SET banner_url = ? WHERE id = ?");
+        $stmt->execute([$banner_url, $server_id]);
+    }
+    
+    $pdo->commit();
+    echo json_encode(['success' => true]);
 } catch (Exception $e) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => $e->getMessage()
-    ]);
+    $pdo->rollBack();
+    http_response_code(500);
+    echo json_encode(['error' => 'Failed to update server']);
+    error_log($e->getMessage());
 }
 
-function handleFileUpload($file, $directory) {
-    $allowed = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!in_array($file['type'], $allowed)) {
-        throw new Exception('Invalid file type');
-    }
-    
-    $max_size = 5 * 1024 * 1024;
-    if ($file['size'] > $max_size) {
-        throw new Exception('File too large');
-    }
-    
-    $upload_dir = "../uploads/$directory/";
+function handleFileUpload($file, $subfolder) {
+    $upload_dir = "../uploads/$subfolder/";
     if (!file_exists($upload_dir)) {
         mkdir($upload_dir, 0777, true);
     }
     
-    $filename = uniqid() . '_' . basename($file['name']);
-    $filepath = $upload_dir . $filename;
+    $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $file_name = uniqid() . '.' . $file_extension;
+    $file_path = $upload_dir . $file_name;
     
-    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
         throw new Exception('Failed to upload file');
     }
     
-    return "/uploads/$directory/" . $filename;
+    return "/uploads/$subfolder/$file_name";
 }
+?>

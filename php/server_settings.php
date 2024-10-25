@@ -1,4 +1,5 @@
 <?php
+// Database connection
 $host = "sql304.infinityfree.com";
 $dbname = "if0_37536001_bloyid";
 $user = "if0_37536001";

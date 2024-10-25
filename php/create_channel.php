@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    require_once 'db_connect.php';
+    require_once 'db.php';
     
     if (!isset($_POST['server_id']) || !isset($_POST['channel_name'])) {
         throw new Exception('Missing required fields');

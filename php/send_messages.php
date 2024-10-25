@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    require_once 'db_connect.php';
+    require_once 'db.php';
     
     $input = json_decode(file_get_contents('php://input'), true);
     

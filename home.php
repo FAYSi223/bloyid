@@ -114,75 +114,147 @@ $friends_stmt->execute([$user_id, $user_id, $user_id]);
         </div>
     </div>
 
-    <div class="modal" id="server-settings-modal">
-        <div class="modal-content">
-            <div class="settings-sidebar">
-                <div class="settings-nav">
-                    <button class="settings-nav-item active" data-tab="overview">Overview</button>
-                    <button class="settings-nav-item" data-tab="channels">Channels</button>
-                    <button class="settings-nav-item" data-tab="members">Members</button>
-                </div>
+<!-- Server Settings Modal -->
+<div class="ss-modal" id="server-settings-modal">
+        <div class="ss-modal-content">
+            <div class="ss-modal-header">
+                <h2>Server Settings</h2>
+                <button class="ss-close-button" onclick="hideModal('server-settings-modal')">&times;</button>
             </div>
             
-            <div class="settings-content">
-                <div class="settings-tab active" id="overview-tab">
-                    <h2>Server Overview</h2>
-                    <form id="server-settings-form">
-                        <div class="form-group">
-                            <label>Server Name</label>
-                            <input type="text" name="server_name" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description"></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Server Icon</label>
-                            <input type="file" name="icon" accept="image/*">
-                            <div class="icon-preview"></div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Server Banner</label>
-                            <input type="file" name="banner" accept="image/*">
-                            <div class="banner-preview"></div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </form>
+            <div class="ss-container">
+                <div class="ss-sidebar">
+                    <div class="ss-nav">
+                        <button class="ss-nav-item active" data-tab="overview">
+                            <i class="fas fa-home"></i>Overview
+                        </button>
+                        <button class="ss-nav-item" data-tab="channels">
+                            <i class="fas fa-hashtag"></i>Channels
+                        </button>
+                        <button class="ss-nav-item" data-tab="members">
+                            <i class="fas fa-users"></i>Members
+                        </button>
+                        <button class="ss-nav-item" data-tab="roles">
+                            <i class="fas fa-user-shield"></i>Roles
+                        </button>
+                        <button class="ss-nav-item danger" data-tab="delete">
+                            <i class="fas fa-trash"></i>Delete Server
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="settings-tab" id="channels-tab">
-                    <h2>Channels</h2>
-                    <div class="channels-list-settings"></div>
-                    <button class="btn btn-primary" onclick="showCreateChannel()">Create Channel</button>
-                </div>
-                
-                <div class="settings-tab" id="members-tab">
-                    <h2>Members</h2>
-                    <div class="members-list-settings"></div>
+                <div class="ss-content">
+                    <!-- Overview Tab -->
+                    <div class="ss-tab active" id="overview-tab">
+                        <form id="server-settings-form" class="ss-form">
+                            <div class="ss-form-group">
+                                <label for="server_name">Server Name</label>
+                                <input type="text" id="server_name" name="server_name" class="ss-input" required>
+                                <span class="ss-form-hint">Choose a name for your server</span>
+                            </div>
+                            
+                            <div class="ss-form-group">
+                                <label for="description">Description</label>
+                                <textarea id="description" name="description" class="ss-textarea" rows="3"></textarea>
+                                <span class="ss-form-hint">Tell members what this server is about</span>
+                            </div>
+                            
+                            <div class="ss-form-group">
+                                <label>Server Icon</label>
+                                <div class="ss-media-upload">
+                                    <div class="ss-icon-preview" id="icon-preview"></div>
+                                    <div class="ss-upload-controls">
+                                        <label class="ss-upload-button" for="icon-upload">
+                                            <i class="fas fa-upload"></i> Upload Icon
+                                        </label>
+                                        <input type="file" id="icon-upload" name="icon" accept="image/*" hidden>
+                                        <button type="button" class="ss-remove-button" id="remove-icon" hidden>
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                    <span class="ss-form-hint">Recommended size: 512x512px</span>
+                                </div>
+                            </div>
+                            
+                            <div class="ss-form-group">
+                                <label>Server Banner</label>
+                                <div class="ss-media-upload">
+                                    <div class="ss-banner-preview" id="banner-preview"></div>
+                                    <div class="ss-upload-controls">
+                                        <label class="ss-upload-button" for="banner-upload">
+                                            <i class="fas fa-upload"></i> Upload Banner
+                                        </label>
+                                        <input type="file" id="banner-upload" name="banner" accept="image/*" hidden>
+                                        <button type="button" class="ss-remove-button" id="remove-banner" hidden>
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                    <span class="ss-form-hint">Recommended size: 960x540px</span>
+                                </div>
+                            </div>
+                            
+                            <div class="ss-form-actions">
+                                <button type="submit" class="ss-btn ss-btn-primary">Save Changes</button>
+                                <button type="button" class="ss-btn ss-btn-secondary" onclick="hideModal('server-settings-modal')">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Channels Tab -->
+                    <div class="ss-tab" id="channels-tab">
+                        <div class="ss-tab-header">
+                            <h3>Channels</h3>
+                            <button class="ss-btn ss-btn-primary" onclick="showCreateChannel()">
+                                <i class="fas fa-plus"></i> Create Channel
+                            </button>
+                        </div>
+                        <div class="ss-channel-list"></div>
+                    </div>
+
+                    <!-- Members Tab -->
+                    <div class="ss-tab" id="members-tab">
+                        <div class="ss-tab-header">
+                            <h3>Members</h3>
+                            <div class="ss-search-box">
+                                <input type="text" id="members-search" class="ss-search-input" placeholder="Search members...">
+                                <i class="fas fa-search ss-search-icon"></i>
+                            </div>
+                        </div>
+                        <div class="ss-member-list"></div>
+                    </div>
+
+                    <!-- Roles Tab -->
+                    <div class="ss-tab" id="roles-tab">
+                        <div class="ss-tab-header">
+                            <h3>Roles</h3>
+                            <button class="ss-btn ss-btn-primary" onclick="showCreateRole()">
+                                <i class="fas fa-plus"></i> Create Role
+                            </button>
+                        </div>
+                        <div class="ss-roles-list"></div>
+                    </div>
+
+                    <!-- Delete Server Tab -->
+                    <div class="ss-tab" id="delete-tab">
+                        <div class="ss-delete-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Delete Server</h3>
+                            <p>This action cannot be undone. This will permanently delete your server and remove all channels and messages.</p>
+                            <div class="ss-confirmation-input">
+                                <label>Please type <strong id="server-name-confirm"></strong> to confirm</label>
+                                <input type="text" id="delete-confirmation" class="ss-input" />
+                            </div>
+                            <button class="ss-btn ss-btn-danger" id="delete-server-btn" disabled>
+                                Delete Server
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="modal" id="create-channel-modal">
-        <div class="modal-content">
-            <h2>Create Channel</h2>
-            <form id="create-channel-form">
-                <input type="text" name="channel_name" placeholder="Channel Name" required>
-                <select name="channel_type">
-                    <option value="text">Text Channel</option>
-                    <option value="voice">Voice Channel</option>
-                </select>
-                <button type="submit" class="btn btn-primary">Create Channel</button>
-                <button type="button" class="btn btn-secondary" onclick="hideModal('create-channel-modal')">Cancel</button>
-            </form>
         </div>
     </div>
 
     <script src="scripts/home.js"></script>
+    <script src="scripts/server_settings.js"></script>
 </body>
 </html>
